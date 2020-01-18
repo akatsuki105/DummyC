@@ -1,5 +1,10 @@
 package parser
 
+import (
+	"dummyc/pkg/token"
+	"fmt"
+)
+
 // Errors - print parse error list
 func (p *Parser) Errors() []string {
 	return p.errors

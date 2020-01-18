@@ -30,8 +30,9 @@ const (
 	COLON    = ":"
 
 	// Keywords
-	INTTYPE = "INTTYPE"
-	RETURN  = "RETURN"
+	FUNCTION = "FUNCTION"
+	INTTYPE  = "INTTYPE"
+	RETURN   = "RETURN"
 )
 
 type Token struct {
@@ -40,8 +41,9 @@ type Token struct {
 }
 
 var keywords = map[string]TokenType{
-	"int":    INTTYPE,
-	"return": RETURN,
+	"int":      INTTYPE,
+	"return":   RETURN,
+	"function": FUNCTION,
 }
 
 func LookupIdent(ident string) TokenType {

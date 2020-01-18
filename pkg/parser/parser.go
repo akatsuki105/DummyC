@@ -1,20 +1,20 @@
 package parser
 
 import (
-	"fmt"
-	"monkey/ast"
+	"dummyc/pkg/ast"
 	"dummyc/pkg/lexer"
 	"dummyc/pkg/token"
+	"fmt"
 	"strconv"
 )
 
 const (
 	_ int = iota
 	LOWEST
-	SUM         // +
-	PRODUCT     // *
-	PREFIX      // -X or !X
-	CALL        // myFunction(X)
+	SUM     // +
+	PRODUCT // *
+	PREFIX  // -X or !X
+	CALL    // myFunction(X)
 )
 
 var precedences = map[token.TokenType]int{
@@ -50,7 +50,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 	p.registerPrefix(token.INT, p.parseIntegerLiteral)
-	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
@@ -60,7 +59,6 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
 	p.registerInfix(token.SLASH, p.parseInfixExpression)
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
-	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
@@ -110,8 +108,8 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.LET:
-		return p.parseLetStatement()
+	case token.INTTYPE:
+		return p.parseDeclarationStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
@@ -119,8 +117,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	}
 }
 
-func (p *Parser) parseLetStatement() *ast.LetStatement {
-	stmt := &ast.LetStatement{Token: p.curToken}
+func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
+	stmt := &ast.DeclarationStatement{Token: p.curToken}
 
 	if !p.expectPeek(token.IDENT) {
 		return nil
@@ -132,15 +130,22 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	p.nextToken()
-
-	stmt.Value = p.parseExpression(LOWEST)
-
 	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
 	return stmt
+}
+
+// "int" , identifier , "(" , [ parameter, { "," , parameter} ] , ")"
+func (p *Parser) parsePrototypeStatement() *ast.PrototypeStatement {
+	stmt := &ast.PrototypeStatement{Token: p.curToken}
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+
+	stmt.Name = 
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
@@ -330,22 +335,6 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
 	exp.Arguments = p.parseExpressionList(token.RPAREN)
-	return exp
-}
-
-func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
-	exp := &ast.IndexExpression{
-		Token: p.curToken,
-		Left:  left,
-	}
-
-	p.nextToken()
-	exp.Index = p.parseExpression(LOWEST)
-
-	if !p.expectPeek(token.RBRACKET) {
-		return nil
-	}
-
 	return exp
 }
 
