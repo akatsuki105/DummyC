@@ -1,58 +1,52 @@
 package token
 
-import "strconv"
-
 type TokenType string
 
 const (
-	tokIllegal    = "illegal" // トークンタイプ不明
-	tokIdentifier = "identifier"
-	tokDigit      = "digit"
-	tokSymbol     = "symbol"
-	tokInt        = "int"
-	tokReturn     = "return"
-	tokEOF        = "eof"
+	ILLEGAL = "ILLEGAL"
+	EOF     = "EOF"
+
+	// Identifiers + literals
+	IDENT = "IDENT" // add, foobar, x, y, ...
+	INT   = "INT"   // 1343456
+
+	// Operators
+	ASSIGN   = "="
+	PLUS     = "+"
+	MINUS    = "-"
+	ASTERISK = "*"
+	SLASH    = "/"
+
+	// Delimiters
+	COMMA     = ","
+	SEMICOLON = ";"
+
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
+	COLON    = ":"
+
+	// Keywords
+	INTTYPE = "INTTYPE"
+	RETURN  = "RETURN"
 )
 
 type Token struct {
-	tokenType   TokenType
-	tokenString string // トークンの文字列表現
-	number      int    // トークンの数値表現
-	line        int    // トークンが出てきた行数
+	Type    TokenType
+	Literal string
 }
 
-func New(tokenType TokenType, tokenString string, line int) *Token {
-	var number int
-	var err error
-	if tokenType == tokDigit {
-		number, err = strconv.Atoi(tokenString)
-		if err != nil {
-			number = 0x7fffffff
-		}
-	} else {
-		number = 0x7fffffff
+var keywords = map[string]TokenType{
+	"int":    INTTYPE,
+	"return": RETURN,
+}
+
+func LookupIdent(ident string) TokenType {
+	if tok, ok := keywords[ident]; ok {
+		return tok
 	}
-
-	return &Token{
-		tokenType:   tokenType,
-		tokenString: tokenString,
-		number:      number,
-		line:        line,
-	}
-}
-
-func (tok *Token) GetTokenType() TokenType {
-	return tok.tokenType
-}
-
-func (tok *Token) GetTokenString() string {
-	return tok.tokenString
-}
-
-func (tok *Token) GetNumberValue() int {
-	return tok.number
-}
-
-func (tok *Token) GetLine() int {
-	return tok.line
+	return IDENT
 }
