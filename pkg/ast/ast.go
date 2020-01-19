@@ -126,7 +126,7 @@ func (ce *CallExpression) String() string {
 
 // DeclarationStatement - Varaiable declaration statement
 type DeclarationStatement struct {
-	Token token.Token // the token.INT token
+	Token token.Token // the token.INTTYPE token
 	Name  *Identifier
 }
 
@@ -183,24 +183,25 @@ func (bs *BlockStatement) String() string {
 	return out.String()
 }
 
-// PrototypeStatement - Prototype declaration statement
-type PrototypeStatement struct {
-	Token      token.Token // The 'int' token
+// Prototype - Prototype declaration
+type Prototype struct {
+	Token      token.Token // the token.INTTYPE token
+	Name       *Identifier
 	Parameters []*Identifier
 }
 
-func (ps *PrototypeStatement) expressionNode()      {}
-func (ps *PrototypeStatement) TokenLiteral() string { return ps.Token.Literal }
-func (ps *PrototypeStatement) String() string {
+func (pt *Prototype) expressionNode()      {}
+func (pt *Prototype) TokenLiteral() string { return pt.Name.TokenLiteral() }
+func (pt *Prototype) String() string {
 	var out bytes.Buffer
 
 	params := []string{}
-	for _, p := range ps.Parameters {
+	for _, p := range pt.Parameters {
 		params = append(params, p.String())
 	}
 
 	out.WriteString("int ")
-	out.WriteString(ps.TokenLiteral())
+	out.WriteString(pt.TokenLiteral())
 	out.WriteString("(")
 	out.WriteString(strings.Join(params, ", "))
 	out.WriteString(") ")
@@ -211,7 +212,7 @@ func (ps *PrototypeStatement) String() string {
 // FunctionLiteral - function node
 type FunctionLiteral struct {
 	Token      token.Token
-	Parameters []*Identifier
+	Prototypes *Prototype
 	Body       *BlockStatement
 }
 
@@ -220,15 +221,7 @@ func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
 
-	params := []string{}
-	for _, p := range fl.Parameters {
-		params = append(params, p.String())
-	}
-
-	out.WriteString(fl.TokenLiteral())
-	out.WriteString("(")
-	out.WriteString(strings.Join(params, ", "))
-	out.WriteString(") ")
+	out.WriteString(fl.Prototypes.String())
 	out.WriteString(fl.Body.String())
 
 	return out.String()

@@ -1,5 +1,7 @@
 package token
 
+import "strconv"
+
 type TokenType string
 
 const (
@@ -8,7 +10,7 @@ const (
 
 	// Identifiers + literals
 	IDENT = "IDENT" // add, foobar, x, y, ...
-	INT   = "INT"   // 1343456
+	DIGIT = "DIGIT" // 1343456
 
 	// Operators
 	ASSIGN   = "="
@@ -30,25 +32,31 @@ const (
 	COLON    = ":"
 
 	// Keywords
-	FUNCTION = "FUNCTION"
-	INTTYPE  = "INTTYPE"
-	RETURN   = "RETURN"
+	INTTYPE = "INT"
+	RETURN  = "RETURN"
 )
 
 type Token struct {
 	Type    TokenType
 	Literal string
+	Number  int
+	Line    int
 }
 
-var keywords = map[string]TokenType{
-	"int":      INTTYPE,
-	"return":   RETURN,
-	"function": FUNCTION,
-}
-
-func LookupIdent(ident string) TokenType {
-	if tok, ok := keywords[ident]; ok {
-		return tok
+func New(tokenType TokenType, literal string, line int) *Token {
+	number := 0x7fffffff
+	var err error
+	if tokenType == DIGIT {
+		number, err = strconv.Atoi(literal)
+		if err != nil {
+			number = 0x7fffffff
+		}
 	}
-	return IDENT
+
+	return &Token{
+		Type:    tokenType,
+		Literal: literal,
+		Number:  number,
+		Line:    line,
+	}
 }
