@@ -8,7 +8,7 @@ import (
 // DeclarationStatement - Varaiable declaration statement
 type DeclarationStatement struct {
 	Token token.Token // the token.INTTYPE token
-	Name  *Identifier
+	Name  Identifier
 }
 
 func (ls *DeclarationStatement) statementNode()       {}

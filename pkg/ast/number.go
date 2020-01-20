@@ -5,7 +5,7 @@ import "dummyc/pkg/token"
 // Number - Interger literal node
 type Number struct {
 	Token token.Token
-	Value int64
+	Value int
 }
 
 func (num *Number) expressionNode()      {}

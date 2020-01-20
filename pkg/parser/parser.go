@@ -49,5 +49,172 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 
 func (p *Parser) Parse() *ast.TranslationUnit {
 	program := &ast.TranslationUnit{}
+
+	for {
+		tok := p.l.GetToken()
+		if tok.Type == token.INTTYPE {
+			// プロトタイプ宣言
+			prototype := p.parsePrototype()
+			// 次が;ならプロトタイプ宣言 {なら関数定義
+			switch p.l.GetCurType() {
+			case token.SEMICOLON:
+				program.Prototypes = append(program.Prototypes, *prototype)
+				p.l.GetNextToken()
+			case token.LBRACE:
+				program.Functions = append(program.Functions, *p.parseFunctionLiteral(prototype))
+			default:
+				panic("invalid token")
+			}
+		} else {
+			panic("not prototype")
+		}
+	}
+
 	return program
+}
+
+func (p *Parser) parsePrototype() *ast.Prototype {
+	prototype := &ast.Prototype{Token: p.l.GetToken()}
+
+	p.l.GetNextToken() // int => identifier
+
+	if p.l.GetCurType() != token.IDENT {
+		panic("panic")
+	}
+	prototype.Name = p.parseIdentifier()
+
+	if p.l.GetCurType() != token.LPAREN {
+		panic("panic")
+	}
+	p.l.GetNextToken() // ( => parameter
+
+	for {
+		if p.l.GetCurType() != token.INTTYPE {
+			panic("panic")
+		}
+		p.l.GetNextToken()
+		prototype.Parameters = append(prototype.Parameters, p.parseIdentifier())
+
+		if p.l.GetCurType() == token.RPAREN {
+			p.l.GetNextToken()
+			break
+		} else if p.l.GetCurType() == token.COMMA {
+			p.l.GetNextToken()
+			continue
+		} else {
+			panic("panic")
+		}
+	}
+
+	return prototype
+}
+
+func (p *Parser) parseFunctionLiteral(prototype *ast.Prototype) *ast.FunctionLiteral {
+	functionLiteral := &ast.FunctionLiteral{
+		Token:     p.l.GetToken(),
+		Prototype: *prototype,
+	}
+	functionLiteral.Body = *p.parseFunctionStatement()
+
+	return functionLiteral
+}
+
+func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
+	functionStmt := &ast.FunctionStatement{}
+
+	p.l.GetNextToken() // { => ...
+
+	// parse DeclarationStatements
+	for p.l.GetCurType() == token.INTTYPE {
+		functionStmt.Declarations = append(functionStmt.Declarations, *p.parseDeclarationStatement())
+	}
+
+	// parse Statements
+
+	return functionStmt
+}
+
+func (p *Parser) parseIdentifier() *ast.Identifier {
+	identifier := &ast.Identifier{
+		Token: p.l.GetToken(),
+		Value: p.l.GetCurString(),
+	}
+	p.l.GetNextToken()
+	return identifier
+}
+
+func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
+	declarationStatement := &ast.DeclarationStatement{
+		Token: p.l.GetToken(),
+	}
+	p.l.GetNextToken()
+
+	declarationStatement.Name = *p.parseIdentifier()
+
+	for p.l.GetCurType() != token.SEMICOLON {
+		p.l.GetNextToken()
+	}
+	p.l.GetNextToken() // ; => 次
+	return declarationStatement
+}
+
+func (p *Parser) parseStatement() ast.Statement {
+	switch p.l.GetCurType() {
+	case token.RETURN:
+		return p.parseReturnStatement()
+	default:
+		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	stmt := &ast.ReturnStatement{}
+	return stmt
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{
+		Token: p.l.GetToken(),
+	}
+	return stmt
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	var exp ast.Expression
+	switch p.l.GetCurType() {
+	case token.IDENT:
+		exp = p.parseIdentifier()
+	case token.DIGIT:
+		exp = p.parseNumber()
+	}
+
+	for p.l.PeekTokenType() != token.SEMICOLON && precedence < p.peekPrecedence() {
+		exp = nil
+	}
+
+	return exp
+}
+
+func (p *Parser) curPrecedence() int {
+	if p, ok := precedences[p.l.GetCurType()]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) peekPrecedence() int {
+	pt := p.l.PeekTokenType()
+	if p, ok := precedences[pt]; ok {
+		return p
+	}
+	return LOWEST
+}
+
+func (p *Parser) parseNumber() *ast.Number {
+	number := &ast.Number{
+		Token: p.l.GetToken(),
+		Value: p.l.GetCurNumVal(),
+	}
+	p.l.GetNextToken()
+	return number
 }

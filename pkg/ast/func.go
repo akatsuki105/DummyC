@@ -34,9 +34,9 @@ func (pt *Prototype) String() string {
 
 // FunctionLiteral - function node
 type FunctionLiteral struct {
-	Token      token.Token
-	Prototypes *Prototype
-	Body       *FunctionStatement
+	Token     token.Token
+	Prototype Prototype
+	Body      FunctionStatement
 }
 
 func (fl *FunctionLiteral) expressionNode()      {}
@@ -44,7 +44,7 @@ func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
 func (fl *FunctionLiteral) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(fl.Prototypes.String())
+	out.WriteString(fl.Prototype.String())
 	out.WriteString(fl.Body.String())
 
 	return out.String()

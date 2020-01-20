@@ -39,6 +39,10 @@ func (lexer *Lexer) GetToken() token.Token {
 	return *lexer.tokens[lexer.curIndex]
 }
 
+func (lexer *Lexer) PeekTokenType() token.TokenType {
+	return lexer.tokens[lexer.curIndex+1].Type
+}
+
 func (lexer *Lexer) GetCurType() token.TokenType {
 	return lexer.tokens[lexer.curIndex].Type
 }
