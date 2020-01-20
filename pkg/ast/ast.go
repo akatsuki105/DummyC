@@ -79,7 +79,7 @@ func (oe *InfixExpression) String() string {
 // CallExpression - call expression node
 type CallExpression struct {
 	Token     token.Token // The '(' token
-	Function  Identifier  // Function Identifier
+	Function  Expression  // Function Identifier
 	Arguments []Expression
 }
 

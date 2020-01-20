@@ -40,6 +40,13 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
+	p.registerInfix(token.PLUS, p.parseInfixExpression)
+	p.registerInfix(token.MINUS, p.parseInfixExpression)
+	p.registerInfix(token.SLASH, p.parseInfixExpression)
+	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
+
 	return p
 }
 
@@ -50,9 +57,10 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 func (p *Parser) Parse() *ast.TranslationUnit {
 	program := &ast.TranslationUnit{}
 
+Loop:
 	for {
-		tok := p.l.GetToken()
-		if tok.Type == token.INTTYPE {
+		switch p.l.GetCurType() {
+		case token.INTTYPE:
 			// プロトタイプ宣言
 			prototype := p.parsePrototype()
 			// 次が;ならプロトタイプ宣言 {なら関数定義
@@ -65,8 +73,10 @@ func (p *Parser) Parse() *ast.TranslationUnit {
 			default:
 				panic("invalid token")
 			}
-		} else {
-			panic("not prototype")
+		case token.EOF:
+			break Loop
+		default:
+			panic("not prototype or EOF")
 		}
 	}
 
@@ -130,6 +140,13 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 	}
 
 	// parse Statements
+	for p.l.GetCurType() != token.RBRACE {
+		functionStmt.Statements = append(functionStmt.Statements, p.parseStatement())
+	}
+
+	if p.l.GetCurType() == token.RBRACE {
+		p.l.GetNextToken() // } => 次の関数
+	}
 
 	return functionStmt
 }
@@ -168,7 +185,16 @@ func (p *Parser) parseStatement() ast.Statement {
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	stmt := &ast.ReturnStatement{}
+	stmt := &ast.ReturnStatement{
+		Token: p.l.GetToken(),
+	}
+
+	stmt.ReturnValue = p.parseExpression(LOWEST)
+
+	if p.l.GetNextType() == token.SEMICOLON {
+		p.l.GetNextToken()
+	}
+
 	return stmt
 }
 
@@ -176,6 +202,13 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{
 		Token: p.l.GetToken(),
 	}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.l.GetNextType() == token.SEMICOLON {
+		p.l.GetNextToken()
+	}
+
 	return stmt
 }
 
@@ -188,8 +221,14 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		exp = p.parseNumber()
 	}
 
-	for p.l.PeekTokenType() != token.SEMICOLON && precedence < p.peekPrecedence() {
-		exp = nil
+	for p.l.GetNextType() != token.SEMICOLON && precedence < p.peekPrecedence() {
+		infix := p.infixParseFns[p.l.GetNextType()]
+		if infix == nil {
+			return exp
+		}
+
+		p.l.GetNextToken()
+		exp = infix(exp)
 	}
 
 	return exp
@@ -203,7 +242,7 @@ func (p *Parser) curPrecedence() int {
 }
 
 func (p *Parser) peekPrecedence() int {
-	pt := p.l.PeekTokenType()
+	pt := p.l.GetNextType()
 	if p, ok := precedences[pt]; ok {
 		return p
 	}
@@ -217,4 +256,54 @@ func (p *Parser) parseNumber() *ast.Number {
 	}
 	p.l.GetNextToken()
 	return number
+}
+
+func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
+	expression := &ast.InfixExpression{
+		Token:    p.l.GetToken(),
+		Operator: p.l.GetCurString(),
+		Left:     left,
+	}
+
+	precedence := p.curPrecedence()
+	p.l.GetNextToken()
+	expression.Right = p.parseExpression(precedence)
+	return expression
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	call := &ast.CallExpression{
+		Token:    p.l.GetToken(),
+		Function: function,
+	}
+
+	p.l.GetNextToken()
+	call.Arguments = p.parseExpressionList(token.RPAREN)
+
+	return call
+}
+
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	list := []ast.Expression{}
+
+	if p.l.GetNextType() == end {
+		p.l.GetNextToken()
+		return list
+	}
+
+	p.l.GetNextToken()
+	list = append(list, p.parseExpression(LOWEST))
+
+	for p.l.GetNextType() == token.COMMA {
+		p.l.GetNextToken() // previous => ,
+		p.l.GetNextToken() // , => expression
+		list = append(list, p.parseExpression(LOWEST))
+	}
+
+	if p.l.GetNextType() != end {
+		return nil
+	}
+	p.l.GetNextToken() // ) => {
+
+	return list
 }
