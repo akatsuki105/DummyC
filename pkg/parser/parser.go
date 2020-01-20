@@ -99,9 +99,13 @@ func (p *Parser) parsePrototype() *ast.Prototype {
 	p.l.GetNextToken() // ( => parameter
 
 	for {
-		if p.l.GetCurType() != token.INTTYPE {
+		if p.l.GetCurType() == token.RPAREN {
+			p.l.GetNextToken()
+			break
+		} else if p.l.GetCurType() != token.INTTYPE {
 			panic("panic")
 		}
+
 		p.l.GetNextToken()
 		prototype.Parameters = append(prototype.Parameters, p.parseIdentifier())
 
@@ -126,6 +130,10 @@ func (p *Parser) parseFunctionLiteral(prototype *ast.Prototype) *ast.FunctionLit
 	}
 	functionLiteral.Body = *p.parseFunctionStatement()
 
+	if p.l.GetCurType() == token.RBRACE {
+		p.l.GetNextToken() // } => 次の関数
+	}
+
 	return functionLiteral
 }
 
@@ -142,10 +150,7 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 	// parse Statements
 	for p.l.GetCurType() != token.RBRACE {
 		functionStmt.Statements = append(functionStmt.Statements, p.parseStatement())
-	}
-
-	if p.l.GetCurType() == token.RBRACE {
-		p.l.GetNextToken() // } => 次の関数
+		p.l.GetNextToken()
 	}
 
 	return functionStmt
@@ -188,6 +193,8 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{
 		Token: p.l.GetToken(),
 	}
+
+	p.l.GetNextToken() // return => expression
 
 	stmt.ReturnValue = p.parseExpression(LOWEST)
 
@@ -254,7 +261,6 @@ func (p *Parser) parseNumber() *ast.Number {
 		Token: p.l.GetToken(),
 		Value: p.l.GetCurNumVal(),
 	}
-	p.l.GetNextToken()
 	return number
 }
 

@@ -164,6 +164,7 @@ func New(source string) *Lexer {
 		}
 	}
 
+	lexer.PushToken(token.New(token.EOF, "", line))
 	return lexer
 }
 
