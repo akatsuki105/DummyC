@@ -92,12 +92,14 @@ func (p *Parser) parsePrototype() *ast.Prototype {
 		panic("panic")
 	}
 	prototype.Name = p.parseIdentifier()
+	p.l.GetNextToken()
 
 	if p.l.GetCurType() != token.LPAREN {
 		panic("panic")
 	}
 	p.l.GetNextToken() // ( => parameter
 
+	// parameter (int a, int b, ...)
 	for {
 		if p.l.GetCurType() == token.RPAREN {
 			p.l.GetNextToken()
@@ -108,6 +110,7 @@ func (p *Parser) parsePrototype() *ast.Prototype {
 
 		p.l.GetNextToken()
 		prototype.Parameters = append(prototype.Parameters, p.parseIdentifier())
+		p.l.GetNextToken()
 
 		if p.l.GetCurType() == token.RPAREN {
 			p.l.GetNextToken()
@@ -145,6 +148,7 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 	// parse DeclarationStatements
 	for p.l.GetCurType() == token.INTTYPE {
 		functionStmt.Declarations = append(functionStmt.Declarations, *p.parseDeclarationStatement())
+		p.l.GetNextToken()
 	}
 
 	// parse Statements
@@ -161,7 +165,6 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 		Token: p.l.GetToken(),
 		Value: p.l.GetCurString(),
 	}
-	p.l.GetNextToken()
 	return identifier
 }
 
@@ -169,14 +172,13 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 	declarationStatement := &ast.DeclarationStatement{
 		Token: p.l.GetToken(),
 	}
-	p.l.GetNextToken()
+	p.l.GetNextToken() // INTTYPE => identifer
 
 	declarationStatement.Name = *p.parseIdentifier()
 
-	for p.l.GetCurType() != token.SEMICOLON {
-		p.l.GetNextToken()
+	for p.l.GetNextType() == token.SEMICOLON {
+		p.l.GetNextToken() // identifer => semicolon
 	}
-	p.l.GetNextToken() // ; => 次
 	return declarationStatement
 }
 
