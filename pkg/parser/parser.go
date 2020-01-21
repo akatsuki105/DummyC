@@ -4,6 +4,7 @@ import (
 	"dummyc/pkg/ast"
 	"dummyc/pkg/lexer"
 	"dummyc/pkg/token"
+	"fmt"
 )
 
 const (
@@ -95,13 +96,14 @@ Loop:
 				p.l.GetNextToken()
 
 			case token.LBRACE:
+				// 関数定義
+
 				// プロトタイプ宣言が正当かチェック
 				if ok := p.checkCorrectDefinition(fn); !ok {
 					panicMsg := name + " is invalid definition"
 					panic(panicMsg)
 				}
 
-				// 関数定義
 				program.Functions = append(program.Functions, *p.parseFunctionLiteral(prototype))
 
 			default:
@@ -119,6 +121,8 @@ Loop:
 }
 
 func (p *Parser) parsePrototype() *ast.Prototype {
+	paramList := []string{}
+
 	prototype := &ast.Prototype{Token: p.l.GetToken()}
 
 	p.l.GetNextToken() // int => identifier
@@ -144,7 +148,12 @@ func (p *Parser) parsePrototype() *ast.Prototype {
 		}
 
 		p.l.GetNextToken()
-		prototype.Parameters = append(prototype.Parameters, p.parseIdentifier())
+		identifier := p.parseIdentifier()
+		if contains(paramList, identifier.Token.Literal) {
+			panic("already used")
+		}
+		prototype.Parameters = append(prototype.Parameters, identifier)
+		paramList = append(paramList, identifier.Token.Literal)
 		p.l.GetNextToken()
 
 		if p.l.GetCurType() == token.RPAREN {
@@ -182,14 +191,26 @@ func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
 
 	// parse DeclarationStatements
 	for p.l.GetCurType() == token.INTTYPE {
-		functionStmt.Declarations = append(functionStmt.Declarations, *p.parseDeclarationStatement())
+		stmt := p.parseDeclarationStatement()
+		if contains(p.variableTable, stmt.Name.TokenLiteral()) {
+			panic("already declared")
+		}
+		p.variableTable = append(p.variableTable, stmt.Name.TokenLiteral())
+		functionStmt.Declarations = append(functionStmt.Declarations, *stmt)
 		p.l.GetNextToken()
 	}
 
 	// parse Statements
+	var stmt ast.Statement
 	for p.l.GetCurType() != token.RBRACE {
-		functionStmt.Statements = append(functionStmt.Statements, p.parseStatement())
+		stmt = p.parseStatement()
+		functionStmt.Statements = append(functionStmt.Statements, stmt)
 		p.l.GetNextToken()
+	}
+
+	// 最後のStatementがReturnか確認
+	if stmt.TokenLiteral() != "return" {
+		panic("not return")
 	}
 
 	return functionStmt
@@ -320,8 +341,36 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 		Function: function,
 	}
 
-	p.l.GetNextToken()
+	// プロトタイプ宣言されているか確認し引数の数をテーブルから取得
+	argc := -1
+	for _, prototype := range p.prototypeTable {
+		if function.TokenLiteral() == prototype.Name {
+			argc = prototype.Argc
+			break
+		}
+	}
+
+	// 関数定義済みであるか確認し、引数の数をテーブルから取得
+	if argc == -1 {
+		for _, fn := range p.functionTable {
+			if function.TokenLiteral() == fn.Name {
+				argc = fn.Argc
+				break
+			}
+		}
+	}
+
+	if argc == -1 {
+		panic("function is not defined")
+	}
+
 	call.Arguments = p.parseExpressionList(token.RPAREN)
+
+	// 引数の数を確認
+	if argc != len(call.Arguments) {
+		fmt.Println(argc, len(call.Arguments))
+		panic("argc is not correct")
+	}
 
 	return call
 }
@@ -349,4 +398,13 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 	p.l.GetNextToken() // ) => {
 
 	return list
+}
+
+func contains(slice []string, target string) bool {
+	for _, s := range slice {
+		if target == s {
+			return true
+		}
+	}
+	return false
 }

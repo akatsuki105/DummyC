@@ -9,6 +9,7 @@ import (
 func TestDeclarationStatement(t *testing.T) {
 	input := `int main() {
 		int i;
+		return 0;
 	}
 	`
 
@@ -44,6 +45,7 @@ func TestExpression(t *testing.T) {
 	input := `int test(int j) {
 		int i;
 		i = j*10;
+		return 0;
 	}`
 
 	l := lexer.New(input)
@@ -59,8 +61,11 @@ func TestExpression(t *testing.T) {
 }
 
 func TestCallStatement(t *testing.T) {
-	input := `int main() {
+	input := `int test(int j);
+
+	int main() {
 		test(10);
+		return 0;
 	}`
 
 	l := lexer.New(input)
@@ -70,7 +75,7 @@ func TestCallStatement(t *testing.T) {
 	mainFunction := translationUnit.Functions[0]
 	statements := mainFunction.Body.Statements
 
-	if len(statements) != 1 {
+	if len(statements) != 2 {
 		t.Fatalf("statements does not contain %d statements. got=%d\n", 1, len(statements))
 	}
 
