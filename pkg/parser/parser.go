@@ -27,11 +27,20 @@ type (
 	infixParseFn func(ast.Expression) ast.Expression
 )
 
+type Function struct {
+	Name string
+	Argc int
+}
+
 type Parser struct {
 	l      *lexer.Lexer
 	errors []string
 
 	infixParseFns map[token.TokenType]infixParseFn
+
+	variableTable  []string   // 宣言済みの変数名を登録する
+	prototypeTable []Function // プロトタイプ宣言済みの関数
+	functionTable  []Function // 定義済みの関数
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -63,15 +72,41 @@ Loop:
 		case token.INTTYPE:
 			// プロトタイプ宣言
 			prototype := p.parsePrototype()
+
+			// 正当性チェックに使うオブジェクトを作成
+			name := prototype.Name.Name()
+			argc := len(prototype.Parameters)
+			fn := Function{name, argc}
+
 			// 次が;ならプロトタイプ宣言 {なら関数定義
 			switch p.l.GetCurType() {
+
 			case token.SEMICOLON:
+				// プロトタイプ宣言
+
+				// 再定義チェック
+				if ok := p.checkReDefinition(fn); !ok {
+					panicMsg := name + " is already definitions"
+					panic(panicMsg)
+				}
+				p.prototypeTable = append(p.prototypeTable, fn)
+
 				program.Prototypes = append(program.Prototypes, *prototype)
 				p.l.GetNextToken()
+
 			case token.LBRACE:
+				// プロトタイプ宣言が正当かチェック
+				if ok := p.checkCorrectDefinition(fn); !ok {
+					panicMsg := name + " is invalid definition"
+					panic(panicMsg)
+				}
+
+				// 関数定義
 				program.Functions = append(program.Functions, *p.parseFunctionLiteral(prototype))
+
 			default:
 				panic("invalid token")
+
 			}
 		case token.EOF:
 			break Loop
@@ -92,7 +127,7 @@ func (p *Parser) parsePrototype() *ast.Prototype {
 		panic("panic")
 	}
 	prototype.Name = p.parseIdentifier()
-	p.l.GetNextToken()
+	p.l.GetNextToken() // identifier => (
 
 	if p.l.GetCurType() != token.LPAREN {
 		panic("panic")
