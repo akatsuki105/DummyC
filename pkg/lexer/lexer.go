@@ -2,7 +2,7 @@ package lexer
 
 import (
 	"bytes"
-	"dummyc/pkg/token"
+	"../token"
 )
 
 type Lexer struct {

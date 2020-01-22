@@ -2,7 +2,7 @@ package ast
 
 import (
 	"bytes"
-	"dummyc/pkg/token"
+	"../token"
 )
 
 // DeclarationStatement - Varaiable declaration statement

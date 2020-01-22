@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"dummyc/pkg/ast"
-	"dummyc/pkg/lexer"
+	"../ast"
+	"../lexer"
 	"testing"
 )
 

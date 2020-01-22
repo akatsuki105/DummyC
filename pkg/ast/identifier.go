@@ -1,6 +1,6 @@
 package ast
 
-import "dummyc/pkg/token"
+import "../token"
 
 // Identifier - Identifier node
 type Identifier struct {

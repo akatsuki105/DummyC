@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"dummyc/pkg/ast"
-	"dummyc/pkg/lexer"
-	"dummyc/pkg/token"
+	"../ast"
+	"../lexer"
+	"../token"
 	"fmt"
 )
 

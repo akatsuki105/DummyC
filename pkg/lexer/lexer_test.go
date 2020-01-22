@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"dummyc/pkg/token"
+	"../token"
 	"io/ioutil"
 	"testing"
 )

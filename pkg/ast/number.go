@@ -1,6 +1,6 @@
 package ast
 
-import "dummyc/pkg/token"
+import "../token"
 
 // Number - Interger literal node
 type Number struct {
