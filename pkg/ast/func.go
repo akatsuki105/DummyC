@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"bytes"
 	"../token"
+	"bytes"
 	"strings"
 )
 
@@ -31,6 +31,7 @@ func (pt *Prototype) String() string {
 
 	return out.String()
 }
+func (pt *Prototype) GetName() string { return pt.Name.Name() }
 
 // FunctionLiteral - function node
 type FunctionLiteral struct {
