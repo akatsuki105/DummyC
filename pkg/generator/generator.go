@@ -75,7 +75,7 @@ func (cg *CodeGen) generatePrototype(prototype *ast.Prototype, mod *llvm.Module)
 
 	// create function
 	function := llvm.AddFunction(*mod, prototype.GetName(), functionType)
-	for i, _ := range function.Params() {
+	for i := range function.Params() {
 		function.Params()[i].SetName(prototype.Parameters[i].Name() + "Arg")
 	}
 
