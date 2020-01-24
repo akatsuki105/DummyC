@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"bytes"
 	"../token"
+	"bytes"
 	"strings"
 )
 
@@ -62,6 +62,7 @@ type InfixExpression struct {
 	Right    Expression
 }
 
+func (oe *InfixExpression) statementNode()       {}
 func (oe *InfixExpression) expressionNode()      {}
 func (oe *InfixExpression) TokenLiteral() string { return oe.Token.Literal }
 func (oe *InfixExpression) String() string {
@@ -83,6 +84,7 @@ type CallExpression struct {
 	Arguments []Expression
 }
 
+func (ce *CallExpression) statementNode()       {}
 func (ce *CallExpression) expressionNode()      {}
 func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
 func (ce *CallExpression) String() string {
@@ -99,6 +101,9 @@ func (ce *CallExpression) String() string {
 	out.WriteString(")")
 
 	return out.String()
+}
+func (ce *CallExpression) GetCallee() string {
+	return ce.Function.String()
 }
 
 // ReturnStatement - Return Statement

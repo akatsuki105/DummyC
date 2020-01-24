@@ -1,14 +1,20 @@
 package ast
 
 import (
-	"bytes"
 	"../token"
+	"bytes"
+)
+
+const (
+	Param = "param"
+	Local = "local"
 )
 
 // DeclarationStatement - Varaiable declaration statement
 type DeclarationStatement struct {
-	Token token.Token // the token.INTTYPE token
-	Name  Identifier
+	Token    token.Token // the token.INTTYPE token
+	Name     Identifier
+	declType string
 }
 
 func (ls *DeclarationStatement) statementNode()       {}
@@ -22,4 +28,12 @@ func (ls *DeclarationStatement) String() string {
 	out.WriteString(";")
 
 	return out.String()
+}
+func (ls *DeclarationStatement) GetDeclType() string {
+	return ls.declType
+}
+func (ls *DeclarationStatement) SetDeclType(dt string) {
+	if dt == Param || dt == Local {
+		ls.declType = dt
+	}
 }

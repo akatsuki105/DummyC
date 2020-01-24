@@ -175,7 +175,7 @@ func (p *Parser) parseFunctionLiteral(prototype *ast.Prototype) *ast.FunctionLit
 		Token:     p.l.GetToken(),
 		Prototype: *prototype,
 	}
-	functionLiteral.Body = *p.parseFunctionStatement()
+	functionLiteral.Body = *p.parseFunctionStatement(prototype)
 
 	if p.l.GetCurType() == token.RBRACE {
 		p.l.GetNextToken() // } => 次の関数
@@ -184,10 +184,22 @@ func (p *Parser) parseFunctionLiteral(prototype *ast.Prototype) *ast.FunctionLit
 	return functionLiteral
 }
 
-func (p *Parser) parseFunctionStatement() *ast.FunctionStatement {
+func (p *Parser) parseFunctionStatement(prototype *ast.Prototype) *ast.FunctionStatement {
 	functionStmt := &ast.FunctionStatement{}
 
 	p.l.GetNextToken() // { => ...
+
+	// parse parameter
+	argc := len(prototype.Parameters)
+	for i := 0; i < argc; i++ {
+		vdecl := &ast.DeclarationStatement{
+			Token: p.l.GetToken(),
+			Name:  *prototype.Parameters[i],
+		}
+		vdecl.SetDeclType(ast.Param)
+		p.variableTable = append(p.variableTable, vdecl.Name.TokenLiteral())
+		functionStmt.Declarations = append(functionStmt.Declarations, *vdecl)
+	}
 
 	// parse DeclarationStatements
 	for p.l.GetCurType() == token.INTTYPE {
@@ -228,6 +240,7 @@ func (p *Parser) parseDeclarationStatement() *ast.DeclarationStatement {
 	declarationStatement := &ast.DeclarationStatement{
 		Token: p.l.GetToken(),
 	}
+	declarationStatement.SetDeclType(ast.Local)
 	p.l.GetNextToken() // INTTYPE => identifer
 
 	declarationStatement.Name = *p.parseIdentifier()
