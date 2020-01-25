@@ -26,7 +26,7 @@ func (cg *CodeGen) GetModule() llvm.Module {
 }
 
 func (cg *CodeGen) Generate(tu *ast.TranslationUnit, name string) bool {
-	return generateTranslationUnit(tu, name)
+	return cg.generateTranslationUnit(tu, name)
 }
 
 // generateTranslationUnit - モジュール生成メソッド
