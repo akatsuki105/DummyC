@@ -18,11 +18,15 @@ func New() *CodeGen {
 	return cg
 }
 
-func (cg *CodeGen) getModule() llvm.Module {
+func (cg *CodeGen) GetModule() llvm.Module {
 	if cg.mod != nil {
 		return *cg.mod
 	}
 	return llvm.NewModule("null")
+}
+
+func (cg *CodeGen) Generate(tu *ast.TranslationUnit, name string) bool {
+	return generateTranslationUnit(tu, name)
 }
 
 // generateTranslationUnit - モジュール生成メソッド
