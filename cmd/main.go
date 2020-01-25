@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	"llvm.org/llvm/bindings/go/llvm"
+	"io/ioutil"
 	"path/filepath"
+
+	"../pkg/generator"
 	"../pkg/lexer"
 	"../pkg/parser"
-	"../pkg/ast"
-	"../pkg/generator"
+	"llvm.org/llvm/bindings/go/llvm"
 )
 
 var (
@@ -40,6 +41,7 @@ func main() {
 	g := generator.New()
 	g.Generate(tu, input)
 	mod := g.GetModule()
+	mod.Dump()
 }
 
 func parseArgs(input, output string) (string, string) {
@@ -57,7 +59,6 @@ func parseArgs(input, output string) (string, string) {
 
 	return input, output
 }
-
 
 func readFile(path string) (string, error) {
 	b, err := ioutil.ReadFile(path)

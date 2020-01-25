@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"bytes"
 	"../token"
+	"bytes"
 )
 
 type Lexer struct {
