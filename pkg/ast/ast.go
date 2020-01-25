@@ -62,7 +62,6 @@ type InfixExpression struct {
 	Right    Expression
 }
 
-func (oe *InfixExpression) statementNode()       {}
 func (oe *InfixExpression) expressionNode()      {}
 func (oe *InfixExpression) TokenLiteral() string { return oe.Token.Literal }
 func (oe *InfixExpression) String() string {
@@ -84,7 +83,6 @@ type CallExpression struct {
 	Arguments []Expression
 }
 
-func (ce *CallExpression) statementNode()       {}
 func (ce *CallExpression) expressionNode()      {}
 func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
 func (ce *CallExpression) String() string {

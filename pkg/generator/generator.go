@@ -126,19 +126,30 @@ func (cg *CodeGen) generateVariableDeclaration(vdecl *ast.DeclarationStatement) 
 }
 
 func (cg *CodeGen) generateStatement(stmt ast.Statement) llvm.Value {
-	if infixStmt, ok := stmt.(*ast.InfixExpression); ok {
-		return cg.generateInfixExpression(infixStmt)
-	}
-
-	if callStmt, ok := stmt.(*ast.CallExpression); ok {
-		return cg.generateCallExpression(callStmt)
-	}
 
 	if returnStmt, ok := stmt.(*ast.ReturnStatement); ok {
 		return cg.generateReturnStatement(returnStmt)
 	}
 
+	if exprStmt, ok := stmt.(*ast.ExpressionStatement); ok {
+		return cg.generateExpressionStatement(exprStmt)
+	}
+
 	panic("generateStatement")
+}
+
+func (cg *CodeGen) generateExpressionStatement(exprStmt *ast.ExpressionStatement) llvm.Value {
+	expr := exprStmt.Expression
+
+	if infixStmt, ok := expr.(*ast.InfixExpression); ok {
+		return cg.generateInfixExpression(infixStmt)
+	}
+
+	if callStmt, ok := expr.(*ast.CallExpression); ok {
+		return cg.generateCallExpression(callStmt)
+	}
+
+	panic("generateExpressionStatement")
 }
 
 func (cg *CodeGen) generateInfixExpression(infixStmt *ast.InfixExpression) llvm.Value {
