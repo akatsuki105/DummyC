@@ -4,7 +4,29 @@ import (
 	"../ast"
 	"../lexer"
 	"testing"
+	"io/ioutil"
 )
+
+func TestParse(t *testing.T) {
+	input, err := readFile("../../test/test.dc")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	l := lexer.New(input)
+	p := New(l)
+	p.Parse()
+}
+
+func readFile(path string) (string, error) {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	lines := string(b)
+	return lines, nil
+}
+
 
 func TestDeclarationStatement(t *testing.T) {
 	input := `int main() {

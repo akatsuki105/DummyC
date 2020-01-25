@@ -175,7 +175,9 @@ func (p *Parser) parseFunctionLiteral(prototype *ast.Prototype) *ast.FunctionLit
 		Token:     p.l.GetToken(),
 		Prototype: *prototype,
 	}
+	p.variableTable = []string{}
 	functionLiteral.Body = *p.parseFunctionStatement(prototype)
+	p.functionTable = append(p.functionTable, Function{prototype.GetName(), prototype.GetParamNum()})
 
 	if p.l.GetCurType() == token.RBRACE {
 		p.l.GetNextToken() // } => 次の関数
@@ -374,7 +376,8 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	}
 
 	if argc == -1 {
-		panic("function is not defined")
+		msg := fmt.Sprintf("%s is not defined", function.TokenLiteral())
+		panic(msg)
 	}
 
 	call.Arguments = p.parseExpressionList(token.RPAREN)

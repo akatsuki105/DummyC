@@ -32,6 +32,7 @@ func (pt *Prototype) String() string {
 	return out.String()
 }
 func (pt *Prototype) GetName() string { return pt.Name.Name() }
+func (pt *Prototype) GetParamNum() int { return len(pt.Parameters) }
 
 // FunctionLiteral - function node
 type FunctionLiteral struct {

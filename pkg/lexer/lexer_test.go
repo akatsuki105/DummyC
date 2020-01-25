@@ -7,7 +7,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	input, err := readFile("../../test/test.c")
+	input, err := readFile("../../test/test.dc")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
