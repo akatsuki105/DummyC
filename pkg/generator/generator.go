@@ -7,13 +7,15 @@ import (
 )
 
 type CodeGen struct {
-	curFunc *llvm.Value  // 現在コード生成中のFunction
-	mod     *llvm.Module // 生成したModuleを格納
-	builder llvm.Builder // LLVM-IRを生成するIRBuilderクラス
+	curFunc   *llvm.Value  // 現在コード生成中のFunction
+	mod       *llvm.Module // 生成したModuleを格納
+	builder   llvm.Builder // LLVM-IRを生成するIRBuilderクラス
+	variables map[string]*llvm.Value
 }
 
 func New() *CodeGen {
 	cg := &CodeGen{}
+	cg.variables = map[string]*llvm.Value{}
 	cg.builder = llvm.NewBuilder()
 	return cg
 }
@@ -117,12 +119,12 @@ func (cg *CodeGen) generateVariableDeclaration(vdecl *ast.DeclarationStatement) 
 
 	// create alloca
 	alloca := cg.builder.CreateAlloca(llvm.Int32Type(), vdecl.Name.Name())
+	cg.variables[vdecl.Name.Name()] = &alloca
 
-	// if args alloca
+	// store args
 	if vdecl.GetDeclType() == ast.Param {
-		// store args
-		v := cg.curFunc.Param(0)
-		cg.builder.CreateStore(v, alloca)
+		v := llvm.ConstInt(llvm.Int32Type(), 0, false)
+		v = cg.builder.CreateStore(v, alloca)
 	}
 
 	return &alloca
@@ -163,7 +165,8 @@ func (cg *CodeGen) generateInfixExpression(infixStmt *ast.InfixExpression) llvm.
 	if infixStmt.Operator == "=" {
 		// lhs is variable
 		lhsVariable := lhs.(*ast.Identifier)
-		lhsValue = cg.builder.CreateLoad(*cg.curFunc, lhsVariable.Name())
+		lhsName := lhsVariable.Name()
+		lhsValue = *cg.variables[lhsName]
 	} else {
 		// lhs ?
 		// Binary ?
@@ -216,7 +219,7 @@ func (cg *CodeGen) generateCallExpression(callExpression *ast.CallExpression) ll
 			argValue = cg.generateInfixExpression(infixStmt)
 			if infixStmt.Operator == "=" {
 				ident := infixStmt.Left.(*ast.Identifier)
-				argValue = cg.builder.CreateLoad(cg.builder.CreateLoad(*cg.curFunc, ident.Name()), "arg_val")
+				argValue = cg.builder.CreateLoad(*cg.variables[ident.Name()], "arg_val")
 			}
 		} else if ident, ok := arg.(*ast.Identifier); ok {
 			argValue = cg.generateIdentifier(ident)
@@ -244,7 +247,8 @@ func (cg *CodeGen) generateReturnStatement(retStmt *ast.ReturnStatement) llvm.Va
 }
 
 func (cg *CodeGen) generateIdentifier(ident *ast.Identifier) llvm.Value {
-	return cg.builder.CreateLoad(*cg.curFunc, "var_tmp")
+	v := cg.builder.CreateAlloca(llvm.Int32Type(), ident.Name())
+	return cg.builder.CreateLoad(v, "var_tmp")
 }
 
 func (cg *CodeGen) generateNumber(value int) llvm.Value {
