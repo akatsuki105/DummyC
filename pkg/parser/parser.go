@@ -199,17 +199,17 @@ func (p *Parser) parseFunctionStatement(prototype *ast.Prototype) *ast.FunctionS
 			Name:  *prototype.Parameters[i],
 		}
 		vdecl.SetDeclType(ast.Param)
-		p.variableTable = append(p.variableTable, vdecl.Name.TokenLiteral())
+		p.variableTable = append(p.variableTable, vdecl.Name.Name())
 		functionStmt.Declarations = append(functionStmt.Declarations, *vdecl)
 	}
 
 	// parse DeclarationStatements
 	for p.l.GetCurType() == token.INTTYPE {
 		stmt := p.parseDeclarationStatement()
-		if contains(p.variableTable, stmt.Name.TokenLiteral()) {
+		if contains(p.variableTable, stmt.Name.Name()) {
 			panic("already declared")
 		}
-		p.variableTable = append(p.variableTable, stmt.Name.TokenLiteral())
+		p.variableTable = append(p.variableTable, stmt.Name.Name())
 		functionStmt.Declarations = append(functionStmt.Declarations, *stmt)
 		p.l.GetNextToken()
 	}

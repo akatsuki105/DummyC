@@ -51,3 +51,5 @@ func (fl *FunctionLiteral) String() string {
 
 	return out.String()
 }
+func (ft *FunctionLiteral) GetName() string { return ft.Prototype.GetName() }
+func (ft *FunctionLiteral) GetParamNum() int { return ft.Prototype.GetParamNum() }

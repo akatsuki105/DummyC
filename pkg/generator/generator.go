@@ -31,16 +31,17 @@ func (cg *CodeGen) Generate(tu *ast.TranslationUnit, name string) bool {
 
 // generateTranslationUnit - モジュール生成メソッド
 func (cg *CodeGen) generateTranslationUnit(tu *ast.TranslationUnit, name string) bool {
-	mod := llvm.NewModule(name)
+	module := llvm.NewModule(name)
+	cg.mod = &module
 
 	// function declaration
 	for _, proto := range tu.Prototypes {
-		cg.generatePrototype(&proto, &mod)
+		cg.generatePrototype(&proto, cg.mod)
 	}
 
 	// function definition
 	for _, function := range tu.Functions {
-		cg.generateFunctionDefinition(&function, &mod)
+		cg.generateFunctionDefinition(&function, cg.mod)
 	}
 
 	return true
@@ -51,19 +52,19 @@ func (cg *CodeGen) generatePrototype(prototype *ast.Prototype, mod *llvm.Module)
 	// 既に定義済みか
 	{
 		function := mod.NamedFunction(prototype.GetName())
-		if !function.IsNull() {
-			if function.ParamsCount() == len(prototype.Parameters) && function.IsNil() {
+		if !function.IsNil() {
+			if function.ParamsCount() == len(prototype.Parameters) {
 				return function
+			} else {
+				msg := fmt.Sprintf("error::function %s is redefined", prototype.GetName())
+				panic(msg)
 			}
-			msg := fmt.Sprintf("error::function %s is redefined", prototype.GetName())
-			panic(msg)
 		}
 	}
 
 	// まだ未定義のとき
-
 	// create arg_types
-	intTypes := []llvm.Type{}
+	intTypes := make([]llvm.Type, len(prototype.Parameters))
 	for i := 0; i < len(prototype.Parameters); i++ {
 		intTypes[i] = llvm.Int32Type()
 	}
@@ -88,6 +89,7 @@ func (cg *CodeGen) generateFunctionDefinition(functionLiteral *ast.FunctionLiter
 	cg.builder.SetInsertPoint(bblock, bblock.FirstInstruction())
 
 	// TODO: Functionのボディを生成
+	cg.generateFunctionStatement(&functionLiteral.Body)
 
 	return function
 }
@@ -95,20 +97,16 @@ func (cg *CodeGen) generateFunctionDefinition(functionLiteral *ast.FunctionLiter
 func (cg *CodeGen) generateFunctionStatement(functionStmt *ast.FunctionStatement) *llvm.Value {
 
 	// insert variable declarations
-	var vdecl *ast.DeclarationStatement
 	var v llvm.Value
 
-	for i := 0; ; i++ {
-		if i+1 >= len(functionStmt.Declarations) {
-			break
-		}
-
-		vdecl = &functionStmt.Declarations[i]
-		v = *cg.generateVariableDeclaration(vdecl)
+	for _, vdecl := range functionStmt.Declarations {
+		fmt.Println(vdecl)
+		v = *cg.generateVariableDeclaration(&vdecl)
 	}
 
 	// insert expr statement
 	for _, stmt := range functionStmt.Statements {
+		fmt.Println(stmt)
 		v = cg.generateStatement(stmt)
 	}
 
@@ -123,7 +121,8 @@ func (cg *CodeGen) generateVariableDeclaration(vdecl *ast.DeclarationStatement) 
 	// if args alloca
 	if vdecl.GetDeclType() == ast.Param {
 		// store args
-		cg.builder.CreateStore(*cg.curFunc, alloca)
+		v := cg.curFunc.Param(0)
+		cg.builder.CreateStore(v, alloca)
 	}
 
 	return &alloca

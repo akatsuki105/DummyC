@@ -22,7 +22,7 @@ func (ls *DeclarationStatement) TokenLiteral() string { return ls.Token.Literal 
 func (ls *DeclarationStatement) String() string {
 	var out bytes.Buffer
 
-	out.WriteString(ls.TokenLiteral() + " ")
+	out.WriteString("int ")
 	out.WriteString(ls.Name.String())
 
 	out.WriteString(";")
