@@ -28,6 +28,11 @@ func main() {
 	// LLVMの処理
 	llvm.InitializeNativeTarget()
 
+	// mem2regの適用
+	pm := llvm.NewPassManager()
+	defer pm.Dispose()
+	pm.AddPromoteMemoryToRegisterPass()
+
 	// ソースコードの読み込み
 	source, err := readFile(input)
 	if err != nil {
@@ -41,6 +46,7 @@ func main() {
 	g := generator.New()
 	g.Generate(tu, input)
 	mod := g.GetModule()
+	pm.Run(mod)
 	mod.Dump()
 }
 
