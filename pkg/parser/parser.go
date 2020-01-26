@@ -17,7 +17,7 @@ const (
 )
 
 var precedences = map[token.TokenType]int{
-	token.ASSIGN: SUM,
+	token.ASSIGN:   SUM,
 	token.PLUS:     SUM,
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
@@ -68,6 +68,23 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 
 func (p *Parser) Parse() *ast.TranslationUnit {
 	program := &ast.TranslationUnit{}
+
+	// printnum関数を事前定義
+	printnum := ast.Prototype{
+		Token: *token.New(token.INTTYPE, "int", 0),
+	}
+	name := &ast.Identifier{
+		Token: *token.New(token.IDENT, "printnum", 0),
+		Value: "printnum",
+	}
+	param := &ast.Identifier{
+		Token: *token.New(token.IDENT, "i", 0),
+		Value: "i",
+	}
+	printnum.Name = name
+	printnum.Parameters = []*ast.Identifier{param}
+	program.Prototypes = append(program.Prototypes, printnum)
+	p.prototypeTable = append(p.prototypeTable, Function{"printnum", 1})
 
 Loop:
 	for {
