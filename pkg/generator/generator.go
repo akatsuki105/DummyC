@@ -77,13 +77,16 @@ func (cg *CodeGen) generatePrototype(prototype *ast.Prototype, mod *llvm.Module)
 	// create function
 	function := llvm.AddFunction(*mod, prototype.GetName(), functionType)
 	for i := range function.Params() {
-		function.Params()[i].SetName(prototype.Parameters[i].Name() + "Arg")
+		paramName := prototype.Parameters[i].Name() + "_arg"
+		function.Params()[i].SetName(paramName)
+		cg.variables[paramName] = &function.Params()[i]
 	}
 
 	return function
 }
 
 func (cg *CodeGen) generateFunctionDefinition(functionLiteral *ast.FunctionLiteral, mod *llvm.Module) llvm.Value {
+	cg.variables = map[string]*llvm.Value{}
 	function := cg.generatePrototype(&functionLiteral.Prototype, mod)
 	cg.curFunc = &function
 
@@ -102,13 +105,11 @@ func (cg *CodeGen) generateFunctionStatement(functionStmt *ast.FunctionStatement
 	var v llvm.Value
 
 	for _, vdecl := range functionStmt.Declarations {
-		fmt.Println(vdecl)
 		v = *cg.generateVariableDeclaration(&vdecl)
 	}
 
 	// insert expr statement
 	for _, stmt := range functionStmt.Statements {
-		fmt.Println(stmt)
 		v = cg.generateStatement(stmt)
 	}
 
@@ -123,7 +124,7 @@ func (cg *CodeGen) generateVariableDeclaration(vdecl *ast.DeclarationStatement) 
 
 	// store args
 	if vdecl.GetDeclType() == ast.Param {
-		v := llvm.ConstInt(llvm.Int32Type(), 0, false)
+		v := *cg.variables[vdecl.Name.Name()+"_arg"]
 		v = cg.builder.CreateStore(v, alloca)
 	}
 
@@ -247,7 +248,7 @@ func (cg *CodeGen) generateReturnStatement(retStmt *ast.ReturnStatement) llvm.Va
 }
 
 func (cg *CodeGen) generateIdentifier(ident *ast.Identifier) llvm.Value {
-	v := cg.builder.CreateAlloca(llvm.Int32Type(), ident.Name())
+	v := *cg.variables[ident.Name()]
 	return cg.builder.CreateLoad(v, "var_tmp")
 }
 
