@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
@@ -18,15 +19,19 @@ var (
 func main() {
 	// コマンドライン引数のパース
 	var (
-		o = flag.String("o", "", "output target")
+		o  = flag.String("o", "", "output target")
+		lf = flag.String("l", "./test/printnum.bc", "link module")
 	)
 	flag.Parse()
 	input := flag.Arg(0)
 	output := *o
+	linkfile := *lf
 	input, output = parseArgs(input, output)
 
 	// LLVMの処理
 	llvm.InitializeNativeTarget()
+	llvm.InitializeNativeAsmPrinter()
+	llvm.InitializeAllAsmParsers()
 
 	// mem2regの適用
 	pm := llvm.NewPassManager()
@@ -44,10 +49,20 @@ func main() {
 	p := parser.New(l)
 	tu := p.Parse()
 	g := generator.New()
-	g.Generate(tu, input)
+	g.Generate(tu, input, linkfile)
 	mod := g.GetModule()
 	pm.Run(mod)
 	mod.Dump()
+
+	{
+		engine, err := llvm.NewExecutionEngine(mod)
+		if err != nil {
+			panic(err)
+		}
+		function := mod.NamedFunction("main")
+		result := engine.RunFunction(function, []llvm.GenericValue{})
+		fmt.Println(result.Int(false))
+	}
 }
 
 func parseArgs(input, output string) (string, string) {

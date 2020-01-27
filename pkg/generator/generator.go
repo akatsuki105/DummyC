@@ -27,8 +27,13 @@ func (cg *CodeGen) GetModule() llvm.Module {
 	return llvm.NewModule("null")
 }
 
-func (cg *CodeGen) Generate(tu *ast.TranslationUnit, name string) bool {
-	return cg.generateTranslationUnit(tu, name)
+func (cg *CodeGen) Generate(tu *ast.TranslationUnit, name, linkfile string) bool {
+	result := cg.generateTranslationUnit(tu, name)
+
+	if linkfile != "" {
+		cg.linkModule(linkfile)
+	}
+	return result
 }
 
 // generateTranslationUnit - モジュール生成メソッド
@@ -254,4 +259,16 @@ func (cg *CodeGen) generateIdentifier(ident *ast.Identifier) llvm.Value {
 
 func (cg *CodeGen) generateNumber(value int) llvm.Value {
 	return llvm.ConstInt(llvm.Int32Type(), uint64(value), false)
+}
+
+func (cg *CodeGen) linkModule(filename string) {
+	fmt.Println(filename)
+	src, err := llvm.ParseBitcodeFile(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := llvm.LinkModules(*cg.mod, src); err != nil {
+		panic(err)
+	}
 }
